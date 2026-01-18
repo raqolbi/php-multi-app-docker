@@ -1,0 +1,17 @@
+# Environment
+.env
+
+
+# Generated Docker files
+/docker/
+docker-compose.yml
+
+
+# Logs (runtime data)
+/logs/
+
+
+# OS / Editor
+.DS_Store
+.vscode/
+.idea/
