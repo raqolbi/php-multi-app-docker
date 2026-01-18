@@ -14,6 +14,11 @@ fi
 export $(grep -v '^#' .env | xargs)
 
 # ==================================================
+# Network (NEW, ENV-DRIVEN)
+# ==================================================
+NGINX_NETWORK="${NGINX_NETWORK:-shared-net}"
+
+# ==================================================
 # Base directories
 # ==================================================
 BASE_DOCKER="docker"
@@ -149,6 +154,8 @@ services:
     environment:
       TZ: ${TZ}
     volumes:$PHP_VOLUMES
+    networks:
+      - ${NGINX_NETWORK}
 EOF
 
 # ==================================================
@@ -204,12 +211,27 @@ EOF
       - ./docker/nginx/conf.d/$APP_NAME.conf:/etc/nginx/conf.d/default.conf:ro
     depends_on:
       - php
+    networks:
+      - ${NGINX_NETWORK}
 EOF
 done
 
+# ==================================================
+# Networks (NEW, external)
+# ==================================================
+cat >> docker-compose.yml <<EOF
+
+networks:
+  ${NGINX_NETWORK}:
+    external: true
+EOF
+
 echo
 echo "[setup] COMPLETE"
+echo "Network used: ${NGINX_NETWORK}"
+echo
 echo "Next steps:"
+echo "  docker network create ${NGINX_NETWORK}   # once"
 echo "  docker compose down"
 echo "  docker compose config   # should be clean"
 echo "  docker compose up -d"
