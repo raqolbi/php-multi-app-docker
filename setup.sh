@@ -74,7 +74,17 @@ RUN apk add --no-cache \
 
 RUN docker-php-ext-install $PHP_EXTS
 
+# Create user with same UID as host (1000)
+RUN addgroup -g 1000 app && adduser -D -G app -u 1000 app
+
+# Set working directory
 WORKDIR /apps
+
+# Change ownership inside container (only for non-mounted files)
+RUN chown -R app:app /apps || true
+
+# Switch to app user
+USER app
 EOF
 
 # ==================================================
@@ -85,6 +95,9 @@ memory_limit=${PHP_MEMORY_LIMIT}
 max_execution_time=${PHP_MAX_EXECUTION_TIME}
 upload_max_filesize=${PHP_UPLOAD_MAX_FILESIZE}
 post_max_size=${PHP_POST_MAX_SIZE}
+
+sys_temp_dir=/tmp
+upload_tmp_dir=/tmp
 
 opcache.enable=${PHP_OPCACHE_ENABLE}
 opcache.memory_consumption=${PHP_OPCACHE_MEMORY}
@@ -140,7 +153,7 @@ for IDX in $APP_INDEXES; do
   fi
 
   PHP_VOLUMES="$PHP_VOLUMES
-      - $APP_PATH:/apps/$APP_NAME:ro"
+      - $APP_PATH:/apps/$APP_NAME"
 done
 
 # ==================================================
