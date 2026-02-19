@@ -179,6 +179,8 @@ for IDX in $APP_INDEXES; do
   APP_PORT=$(printenv "APP${IDX}_PORT")
   APP_PATH=$(printenv "APP${IDX}_PATH")
   APP_LOG_PATH=$(printenv "APP${IDX}_LOG_PATH" || true)
+  APP_PUBLIC_DIR=$(printenv "APP${IDX}_PUBLIC_DIR" || true)
+  APP_IS_LARAVEL=$(printenv "APP${IDX}_IS_LARAVEL" || true)
 
   if [ -z "$APP_NAME" ] || [ -z "$APP_PORT" ] || [ -z "$APP_PATH" ]; then
     echo "[error] APP${IDX} config incomplete"
@@ -188,11 +190,22 @@ for IDX in $APP_INDEXES; do
   [ -z "$APP_LOG_PATH" ] && APP_LOG_PATH="$LOGS_DIR/$APP_NAME"
   mkdir -p "$APP_LOG_PATH"
 
+  # Public root (optional per app):
+  # - default: /apps/<app>
+  # - APPx_IS_LARAVEL=true -> /apps/<app>/public
+  # - APPx_PUBLIC_DIR overrides all (custom public dir)
+  APP_DOC_ROOT="/apps/$APP_NAME"
+  if [ -n "$APP_PUBLIC_DIR" ]; then
+    APP_DOC_ROOT="/apps/$APP_NAME/$APP_PUBLIC_DIR"
+  elif [ "${APP_IS_LARAVEL:-false}" = "true" ]; then
+    APP_DOC_ROOT="/apps/$APP_NAME/public"
+  fi
+
   # nginx vhost
   cat > "$NGINX_CONF_DIR/$APP_NAME.conf" <<EOF
 server {
   listen 80;
-  root /apps/$APP_NAME;
+  root $APP_DOC_ROOT;
   index index.php index.html;
 
   access_log /var/log/nginx/$APP_NAME/access.log;
